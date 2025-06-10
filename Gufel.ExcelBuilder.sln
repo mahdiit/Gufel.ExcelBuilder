@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.36105.23 d17.13
+VisualStudioVersion = 17.13.36105.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gufel.ExcelBuilder", "Builder\Gufel.ExcelBuilder.csproj", "{A3F422C6-8A1C-44BA-A2AA-E03199F58D81}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gufel.ExcelBuilder.Model", "Model\Gufel.ExcelBuilder.Model.csproj", "{9CFD7668-D10A-466F-BFB1-E392E790A507}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gufel.ExcelBuilder.UnitTest", "Test\Gufel.ExcelBuilder.UnitTest\Gufel.ExcelBuilder.UnitTest.csproj", "{C1FBAA99-D1E3-447D-91FD-600DA10640BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{9CFD7668-D10A-466F-BFB1-E392E790A507}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9CFD7668-D10A-466F-BFB1-E392E790A507}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9CFD7668-D10A-466F-BFB1-E392E790A507}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1FBAA99-D1E3-447D-91FD-600DA10640BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1FBAA99-D1E3-447D-91FD-600DA10640BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1FBAA99-D1E3-447D-91FD-600DA10640BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1FBAA99-D1E3-447D-91FD-600DA10640BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
