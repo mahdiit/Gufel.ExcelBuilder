@@ -8,21 +8,23 @@ namespace Gufel.ExcelBuilder.ColumnProvider
         : IColumnProvider
     {
         private Type? _dataType;
+        private MetadataTypeAttribute? _metadataType;
 
         public List<ExcelColumnAttribute> GetColumns(Type dataType)
         {
             _dataType = dataType;
+            _metadataType = _dataType.GetCustomAttributes(typeof(MetadataTypeAttribute), true)
+                .OfType<MetadataTypeAttribute>().FirstOrDefault();
+
             return FieldData().Concat(PropertyData()).ToList();
         }
 
         private List<ExcelColumnAttribute> PropertyData()
         {
             var props = _dataType!.GetProperties();
-            var metadataType = _dataType.GetCustomAttributes(typeof(MetadataTypeAttribute), true)
-                .OfType<MetadataTypeAttribute>().FirstOrDefault();
+            var metaDataProps = _metadataType?.MetadataClassType.GetProperties();
 
             var result = new List<ExcelColumnAttribute>();
-            var metaDataProps = metadataType?.MetadataClassType.GetProperties();
             foreach (var prop in props)
             {
                 if (onlyWithAttribute)
@@ -58,6 +60,7 @@ namespace Gufel.ExcelBuilder.ColumnProvider
         private List<ExcelColumnAttribute> FieldData()
         {
             var props = _dataType!.GetFields();
+            var metaDataProps = _metadataType?.MetadataClassType.GetFields();
 
             var result = new List<ExcelColumnAttribute>();
             foreach (var prop in props)
@@ -65,10 +68,19 @@ namespace Gufel.ExcelBuilder.ColumnProvider
                 if (onlyWithAttribute)
                 {
                     var attr = prop.GetCustomAttributes(true).FirstOrDefault(c => c is ExcelColumnAttribute);
+                    if (attr == null && metaDataProps != null)
+                    {
+                        var metaProp = metaDataProps.FirstOrDefault(x => x.Name == prop.Name);
+                        if (metaProp != null)
+                        {
+                            attr = metaProp.GetCustomAttributes(true).FirstOrDefault(c => c is ExcelColumnAttribute);
+                        }
+                    }
                     if (attr == null) continue;
 
                     var excelAttr = (ExcelColumnAttribute)attr;
                     excelAttr.SourceName ??= prop.Name;
+                    excelAttr.Name ??= excelAttr.SourceName;
                     excelAttr.SourceIsField = true;
 
                     result.Add(excelAttr);
