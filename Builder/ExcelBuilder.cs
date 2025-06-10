@@ -12,14 +12,6 @@ using OfficeOpenXml.Style.XmlAccess;
 
 namespace Gufel.ExcelBuilder
 {
-    /// <summary>
-    /// در صورتی که ستون رند شد صحیح و در غیر این صورت False
-    /// </summary>
-    /// <param name="column"></param>
-    /// <param name="value"></param>
-    /// <param name="excelColumn"></param>
-    /// <param name="rowData"></param>
-    /// <returns></returns>
     public delegate bool RenderColumn(string column, object? value, ExcelRange excelColumn, Dictionary<string, object?> rowData);
     public delegate void CreateWorksheet(ExcelWorksheet ws);
     public delegate void CreateColumn(ExcelColumn column);
@@ -28,11 +20,13 @@ namespace Gufel.ExcelBuilder
     {
         private MemoryStream? _memoryStream;
         private ExcelPackage? _xlsx;
-        public RenderColumn? OnRenderColumn { get; set; }
-        public string? RowNumber { get; set; } = null;
-        private bool HasRowNumber => !string.IsNullOrEmpty(RowNumber);
-        public CreateWorksheet? OnCreateWorksheet { get; set; }
-        public CreateColumn? OnCreateColumn { get; set; }
+
+        public event CreateWorksheet? OnCreateWorksheet;
+        public event CreateColumn? OnCreateColumn;
+        public event RenderColumn? OnRenderColumn;
+
+        public string? RowNumberColumnName { get; set; } = null;
+        private bool HasRowNumber => !string.IsNullOrEmpty(RowNumberColumnName);
 
         private IColumnProvider _columnProvider = new DefaultColumnProvider();
         private IValueProvider _valueProvider = new DefaultValueProvider();
@@ -51,7 +45,7 @@ namespace Gufel.ExcelBuilder
 
         public ExcelBuilder Create(string? rowNumber = null, bool setDefaultStyle = false)
         {
-            RowNumber = rowNumber;
+            RowNumberColumnName = rowNumber;
 
             if (_xlsx != null) return this;
 
@@ -150,7 +144,7 @@ namespace Gufel.ExcelBuilder
                 ws.Cells[1, 1].StyleName = HeaderStyleName;
 
             if (HasRowNumber)
-                ws.Cells[1, 1].Value = RowNumber;
+                ws.Cells[1, 1].Value = RowNumberColumnName;
 
             var totalCount = 0;
             var cellPadding = HasRowNumber ? 2 : 1;
