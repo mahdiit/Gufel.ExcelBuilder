@@ -7,6 +7,12 @@ namespace Gufel.ExcelBuilder.ColumnProvider
     public class DefaultColumnProvider(bool onlyWithAttribute = false)
         : IColumnProvider
     {
+        private static readonly Lazy<DefaultColumnProvider> Default = new(() => new DefaultColumnProvider());
+        public static DefaultColumnProvider Create()
+        {
+            return Default.Value;
+        }
+
         private Type? _dataType;
         private MetadataTypeAttribute? _metadataType;
 

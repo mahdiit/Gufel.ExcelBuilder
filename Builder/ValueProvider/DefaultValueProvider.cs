@@ -6,6 +6,12 @@ namespace Gufel.ExcelBuilder.ValueProvider
 {
     public class DefaultValueProvider : IValueProvider
     {
+        private static readonly Lazy<DefaultValueProvider> Default = new(() => new DefaultValueProvider());
+        public static DefaultValueProvider Create()
+        {
+            return Default.Value;
+        }
+
         public object? GetValue(ExcelColumnAttribute excelColumn, object classObject)
         {
             return excelColumn.SourceIsField

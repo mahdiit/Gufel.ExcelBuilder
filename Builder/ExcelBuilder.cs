@@ -16,8 +16,13 @@ namespace Gufel.ExcelBuilder
     public delegate void CreateWorksheet(ExcelWorksheet ws);
     public delegate void CreateColumn(ExcelColumn column);
 
-    public sealed class ExcelBuilder
+    public sealed class ExcelBuilder : IDisposable
     {
+        public ExcelBuilder()
+        {
+            Settings = new ExcelBuilderSettings();
+        }
+
         private MemoryStream? _memoryStream;
         private ExcelPackage? _xlsx;
 
@@ -25,11 +30,10 @@ namespace Gufel.ExcelBuilder
         public event CreateColumn? OnCreateColumn;
         public event RenderColumn? OnRenderColumn;
 
-        public string? RowNumberColumnName { get; set; } = null;
-        private bool HasRowNumber => !string.IsNullOrEmpty(RowNumberColumnName);
+        private IColumnProvider _columnProvider = DefaultColumnProvider.Create();
+        private IValueProvider _valueProvider = DefaultValueProvider.Create();
 
-        private IColumnProvider _columnProvider = new DefaultColumnProvider();
-        private IValueProvider _valueProvider = new DefaultValueProvider();
+        public ExcelBuilderSettings Settings { get; set; }
 
         public ExcelBuilder SetColumnProvider(IColumnProvider provider)
         {
@@ -43,35 +47,34 @@ namespace Gufel.ExcelBuilder
             return this;
         }
 
-        public ExcelBuilder Create(string? rowNumber = null, bool setDefaultStyle = false)
+        public ExcelBuilder Initialize()
         {
-            RowNumberColumnName = rowNumber;
-
             if (_xlsx != null) return this;
 
             _memoryStream = new MemoryStream();
             _xlsx = new ExcelPackage(_memoryStream);
 
-            if (!setDefaultStyle) return this;
+            if (!Settings.UseDefaultStyle) return this;
 
-            var headerStyle = CreateStyle("CmHeaderStyle");
-            HeaderStyleName = "CmHeaderStyle";
-            headerStyle.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-            headerStyle.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-            headerStyle.Style.WrapText = false;
-            headerStyle.Style.Fill.PatternType = ExcelFillStyle.Solid;
-            headerStyle.Style.Fill.BackgroundColor.SetColor(Color.Gainsboro);
+            if (Settings.HeaderStyle == null)
+            {
+                Settings.HeaderStyle = CreateStyle(Settings.HeaderStyleName);
+                Settings.HeaderStyle.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                Settings.HeaderStyle.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+                Settings.HeaderStyle.Style.WrapText = false;
+                Settings.HeaderStyle.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                Settings.HeaderStyle.Style.Fill.BackgroundColor.SetColor(Color.Gainsboro);
+            }
 
-            var cellStyle = CreateStyle("CmCellStyle");
-            CellStyleName = "CmCellStyle";
-            cellStyle.Style.Font.Name = "Tahoma";
-            cellStyle.Style.Font.Size = 9.5f;
+            if (Settings.CellStyle == null)
+            {
+                Settings.CellStyle = CreateStyle(Settings.CellStyleName);
+                Settings.CellStyle.Style.Font.Name = "Tahoma";
+                Settings.CellStyle.Style.Font.Size = 9.5f;
+            }
+
             return this;
         }
-
-        public string? CellStyleName { get; set; }
-        public string? HeaderStyleName { get; set; }
-        public bool IsRtl { get; set; } = true;
 
         public ExcelNamedStyleXml CreateStyle(string name)
         {
@@ -137,22 +140,22 @@ namespace Gufel.ExcelBuilder
 
             OnCreateWorksheet?.Invoke(ws);
 
-            if (!string.IsNullOrEmpty(CellStyleName))
-                ws.Cells.StyleName = CellStyleName;
+            if (Settings.CellStyle != null)
+                ws.Cells.StyleName = Settings.CellStyleName;
 
-            if (!string.IsNullOrEmpty(HeaderStyleName) && HasRowNumber)
-                ws.Cells[1, 1].StyleName = HeaderStyleName;
+            if (Settings.HeaderStyle != null)
+                ws.Cells[1, 1].StyleName = Settings.HeaderStyleName;
 
-            if (HasRowNumber)
-                ws.Cells[1, 1].Value = RowNumberColumnName;
+            if (Settings.HasRowNumber)
+                ws.Cells[1, 1].Value = Settings.RowNumberColumnName;
 
             var totalCount = 0;
-            var cellPadding = HasRowNumber ? 2 : 1;
+            var cellPadding = Settings.HasRowNumber ? 2 : 1;
 
             for (var i = 0; i < colInfoList.Count; i++)
             {
-                if (!string.IsNullOrEmpty(HeaderStyleName))
-                    ws.Cells[1, i + cellPadding].StyleName = HeaderStyleName;
+                if (Settings.HeaderStyle != null)
+                    ws.Cells[1, i + cellPadding].StyleName = Settings.HeaderStyleName;
 
                 ws.Cells[1, i + cellPadding].Value = colInfoList[i].Name;
 
@@ -166,7 +169,7 @@ namespace Gufel.ExcelBuilder
                 if (row == null)
                     continue;
 
-                if (HasRowNumber)
+                if (Settings.HasRowNumber)
                 {
                     ws.Cells[totalCount + 1, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                     ws.Cells[totalCount + 1, 1].Value = totalCount;
@@ -217,12 +220,12 @@ namespace Gufel.ExcelBuilder
                 ws.Cells.AutoFitColumns();
 
             ws.View.PageLayoutView = false;
-            ws.View.RightToLeft = IsRtl;
+            ws.View.RightToLeft = Settings.IsRtl;
 
             return this;
         }
 
-        public byte[] Build()
+        public byte[] BuildFile()
         {
             if (_xlsx == null || _memoryStream == null)
                 throw new ExcelBuildException("document is empty", "empty.document");
