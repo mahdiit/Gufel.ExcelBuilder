@@ -1,18 +1,44 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 
-  <ItemGroup>
-    <PackageReference Include="EPPlus" Version="8.0.5" />
-    <PackageReference Include="Gufel.Date" Version="1.0.0" />
-  </ItemGroup>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Model\Gufel.ExcelBuilder.Model.csproj" />
-  </ItemGroup>
+		<PackageId>Gufel.ExcelBuilder</PackageId>
+		<Title>Gufel excel builder / importer extention for EPPlus</Title>
+		<Authors>mahdiit</Authors>
+		<Version>1.0.0</Version>
+		<Description>This project provides a flexible and extensible framework for building and exporting Excel files in .NET</Description>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/mahdiit/Gufel.ExcelBuilder</RepositoryUrl>
+		<PackageTags>epplus,excel,xlsx</PackageTags>
+		<PackageIcon>excel.jpg</PackageIcon>
+		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+		<PackageProjectUrl>https://github.com/mahdiit/Gufel.ExcelBuilder</PackageProjectUrl>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="EPPlus" Version="8.0.5" />
+		<PackageReference Include="Gufel.Date" Version="1.0.0" />
+		<PackageReference Include="Gufel.ExcelBuilder.Model" Version="1.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="excel.jpg">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="LICENSE.txt">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
 </Project>
