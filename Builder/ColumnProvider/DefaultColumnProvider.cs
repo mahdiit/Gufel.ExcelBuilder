@@ -1,12 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Dynamic;
 using Gufel.ExcelBuilder.Model;
 using Gufel.ExcelBuilder.Model.Base;
 
 namespace Gufel.ExcelBuilder.ColumnProvider
 {
-    public class DefaultColumnProvider(bool onlyWithAttribute = false)
+    public class DefaultColumnProvider(bool onlyWithAttribute = true)
         : IColumnProvider
     {
+        object? _sampleData;
         private static readonly Lazy<DefaultColumnProvider> Default = new(() => new DefaultColumnProvider());
         public static DefaultColumnProvider Create()
         {
@@ -18,11 +20,20 @@ namespace Gufel.ExcelBuilder.ColumnProvider
 
         public List<ExcelColumnAttribute> GetColumns(Type dataType)
         {
+            if (dataType == typeof(ExpandoObject))
+            {
+                return _sampleData == null ? 
+                    throw new ArgumentNullException("sample data in dynamic object must set") 
+                    : DynamicData();
+            }
+
             _dataType = dataType;
             _metadataType = _dataType.GetCustomAttributes(typeof(MetadataTypeAttribute), true)
                 .OfType<MetadataTypeAttribute>().FirstOrDefault();
 
-            return FieldData().Concat(PropertyData()).ToList();
+            return FieldData().Concat(PropertyData())
+                .OrderBy(x => x.Priority)
+                .ToList();
         }
 
         private List<ExcelColumnAttribute> PropertyData()
@@ -97,6 +108,22 @@ namespace Gufel.ExcelBuilder.ColumnProvider
                 }
             }
             return result;
+        }
+
+        private List<ExcelColumnAttribute> DynamicData()
+        {
+            return ((ExpandoObject)_sampleData!)
+                .Select(x => new ExcelColumnAttribute()
+                {
+                    Name = x.Key,
+                    SourceName = x.Key,
+                    SourceIsField = false
+                }).ToList();
+        }
+
+        public void SetSampleData(object? sampleData)
+        {
+            _sampleData = sampleData;
         }
     }
 }

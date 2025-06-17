@@ -21,7 +21,7 @@
         /// <summary>
         /// Date format apply on render
         /// </summary>
-        public string? DateFormat { get; set; }
+        public string? PersianDateFormat { get; set; }
 
         /// <summary>
         /// Format apply to column in excel

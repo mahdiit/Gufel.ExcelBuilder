@@ -9,5 +9,10 @@ namespace Gufel.ExcelBuilder.ColumnProvider
         {
             return columns;
         }
+
+        public void SetSampleData(object? sampleData)
+        {
+            
+        }
     }
 }

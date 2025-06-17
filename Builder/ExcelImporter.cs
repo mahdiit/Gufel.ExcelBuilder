@@ -5,12 +5,20 @@ using OfficeOpenXml;
 
 namespace Gufel.ExcelBuilder
 {
-    public sealed class ExcelImporter(Stream fileStream) : IDisposable
+    public sealed class ExcelImporter : IDisposable
     {
         private ExcelWorksheet? _currentWorksheet;
-        private ExcelPackage? _package;
-        private ExcelWorkbook? _workbook;
-        private IColumnProvider _columnProvider = new DefaultColumnProvider();
+        private ExcelPackage _package;
+        private ExcelWorkbook _workbook;
+        private IColumnProvider _columnProvider = DefaultColumnProvider.Create();
+
+        public ExcelImporter(Stream fileStream)
+        {
+            _package = new ExcelPackage(fileStream);
+            _workbook = _package.Workbook;
+            if (_workbook == null)
+                throw new ExcelImportException("No workbook found on stream", "no.workbook.found");
+        }
 
         #region Builder
         public static ExcelImporter FromStream(Stream excelStream)
@@ -25,29 +33,7 @@ namespace Gufel.ExcelBuilder
         {
             return new ExcelImporter(new MemoryStream(excelBuffer));
         }
-        #endregion
-
-        public ExcelImporter Load()
-        {
-            _package = new ExcelPackage(fileStream);
-            _workbook = _package.Workbook;
-            if (_workbook == null)
-                throw new ExcelImportException("No workbook found on stream", "no.workbook.found");
-
-            return this;
-        }
-
-        public ExcelImporter SetSheet(string sheetName)
-        {
-            if (_workbook == null)
-                throw new ExcelImportException("File not loaded", "file.not.loaded");
-
-            if (_workbook.Worksheets.All(c => c.Name != sheetName))
-                throw new ExcelImportException("Worksheet with this name not found", "worksheet.not.found");
-
-            _currentWorksheet = _workbook.Worksheets[sheetName];
-            return this;
-        }
+        #endregion         
 
         public ExcelImporter SetColumnProvider(IColumnProvider columnProvider)
         {
@@ -97,10 +83,13 @@ namespace Gufel.ExcelBuilder
 
         }
 
-        public List<T> GetList<T>() where T : new()
+        public List<T> GetList<T>(string sheetName) where T : new()
         {
-            if (_currentWorksheet == null)
-                throw new ExcelImportException("Current worksheet not set", "no.active.worksheet");
+            if (_workbook.Worksheets.All(c => c.Name != sheetName))
+                throw new ExcelImportException("Worksheet with this name not found", "worksheet.not.found");
+
+            _currentWorksheet = _workbook.Worksheets[sheetName];
+            
             var itemType = typeof(T);
             var columns = _columnProvider.GetColumns(itemType);
 
@@ -142,8 +131,7 @@ namespace Gufel.ExcelBuilder
 
         public void Dispose()
         {
-            fileStream.Dispose();
-            _package?.Dispose();
+            _package.Dispose();
         }
     }
 }

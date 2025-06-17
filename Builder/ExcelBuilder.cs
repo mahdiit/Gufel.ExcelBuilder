@@ -21,10 +21,12 @@ namespace Gufel.ExcelBuilder
         public ExcelBuilder()
         {
             Settings = new ExcelBuilderSettings();
+            _memoryStream = new MemoryStream();
+            _xlsx = new ExcelPackage(_memoryStream);
         }
 
-        private MemoryStream? _memoryStream;
-        private ExcelPackage? _xlsx;
+        private readonly MemoryStream _memoryStream;
+        private readonly ExcelPackage _xlsx;
 
         public event CreateWorksheet? OnCreateWorksheet;
         public event CreateColumn? OnCreateColumn;
@@ -33,7 +35,7 @@ namespace Gufel.ExcelBuilder
         private IColumnProvider _columnProvider = DefaultColumnProvider.Create();
         private IValueProvider _valueProvider = DefaultValueProvider.Create();
 
-        public ExcelBuilderSettings Settings { get; set; }
+        public ExcelBuilderSettings Settings { get; private set; }
 
         public ExcelBuilder SetColumnProvider(IColumnProvider provider)
         {
@@ -47,58 +49,28 @@ namespace Gufel.ExcelBuilder
             return this;
         }
 
-        public ExcelBuilder Initialize()
+        public ExcelBuilder SetSettings(ExcelBuilderSettings settings)
         {
-            if (_xlsx != null) return this;
-
-            _memoryStream = new MemoryStream();
-            _xlsx = new ExcelPackage(_memoryStream);
-
-            if (!Settings.UseDefaultStyle) return this;
-
-            if (Settings.HeaderStyle == null)
-            {
-                Settings.HeaderStyle = CreateStyle(Settings.HeaderStyleName);
-                Settings.HeaderStyle.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                Settings.HeaderStyle.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-                Settings.HeaderStyle.Style.WrapText = false;
-                Settings.HeaderStyle.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                Settings.HeaderStyle.Style.Fill.BackgroundColor.SetColor(Color.Gainsboro);
-            }
-
-            if (Settings.CellStyle == null)
-            {
-                Settings.CellStyle = CreateStyle(Settings.CellStyleName);
-                Settings.CellStyle.Style.Font.Name = "Tahoma";
-                Settings.CellStyle.Style.Font.Size = 9.5f;
-            }
-
+            Settings = settings;
             return this;
         }
 
         public ExcelNamedStyleXml CreateStyle(string name)
         {
-            if (_xlsx == null)
-                throw new ExcelBuildException("workbook is empty", "empty.workbook");
-
             return _xlsx.Workbook.Styles.CreateNamedStyle(name);
         }
 
-        public ExcelBuilder AddSheet<T>(string name, List<T> data, bool autoFitColumns = true)
+        public ExcelBuilder AddSheet<T>(string name, List<T> data)
         {
-            if (_xlsx == null)
-                throw new ExcelBuildException("workbook is empty", "empty.workbook");
+            _columnProvider.SetSampleData(data.FirstOrDefault());
 
             var colInfoList = _columnProvider.GetColumns(typeof(T));
-            return AddSheet(name, colInfoList, data, autoFitColumns);
+            return AddSheet(name, colInfoList, data);
 
         }
 
-        public ExcelBuilder AddSheet(string name, IEnumerable data, bool autoFitColumns = true)
+        public ExcelBuilder AddSheet(string name, IEnumerable data)
         {
-            if (_xlsx == null)
-                throw new ExcelBuildException("workbook is empty", "empty.workbook");
-
             var enumerable = data as object[] ?? data.Cast<object>().ToArray();
             var enumerator = enumerable.GetEnumerator();
             if (!enumerator.MoveNext())
@@ -107,43 +79,45 @@ namespace Gufel.ExcelBuilder
                 return this;
             }
 
-            var first = enumerator.Current;
-            if (first == null)
-                throw new ExcelBuildException("Empty data", "empty.data");
+            var first = enumerator.Current ?? throw new ExcelBuildException("Empty data", "empty.data");
+            _columnProvider.SetSampleData(first);
 
             var fType = first.GetType();
             var colInfoList = _columnProvider.GetColumns(fType);
-            if (fType != typeof(ExpandoObject)) return AddSheet(name, colInfoList, enumerable, autoFitColumns);
-
-            var expandoDict = (IEnumerable<ExpandoObject>)enumerable;
-            var colInfoList2 = expandoDict.First()
-                .Select(x => new ExcelColumnAttribute()
-                {
-                    Name = x.Key,
-                    SourceName = x.Key,
-                    SourceIsField = false
-                }).ToList();
-
-            colInfoList = (from all in colInfoList2
-                           join cols in colInfoList on all.SourceName equals cols.SourceName
-                           select cols).ToList();
-
-            return AddSheet(name, colInfoList, enumerable, autoFitColumns);
+            return AddSheet(name, colInfoList, enumerable);
         }
 
 
-        private ExcelBuilder AddSheet(string name, List<ExcelColumnAttribute> colInfoList, IEnumerable data, bool autoFitColumns = true)
+        private ExcelBuilder AddSheet(string name, List<ExcelColumnAttribute> colInfoList, IEnumerable data)
         {
-            if (_xlsx == null) return this;
-
             var ws = _xlsx.Workbook.Worksheets.Add(name);
 
             OnCreateWorksheet?.Invoke(ws);
+            
+            if (Settings.UseDefaultStyle)
+            {
+                if (Settings.HeaderStyle == null)
+                {
+                    Settings.HeaderStyle = CreateStyle(Settings.HeaderStyleName ?? "CmCellStyle");
+                    Settings.HeaderStyle.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                    Settings.HeaderStyle.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+                    Settings.HeaderStyle.Style.WrapText = false;
+                    Settings.HeaderStyle.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    Settings.HeaderStyle.Style.Fill.BackgroundColor.SetColor(Color.Gainsboro);
+                }
 
-            if (Settings.CellStyle != null)
+                if (Settings.CellStyle == null)
+                {
+                    Settings.CellStyle = CreateStyle(Settings.CellStyleName ?? "CmHeaderStyle");
+                    Settings.CellStyle.Style.Font.Name = "Tahoma";
+                    Settings.CellStyle.Style.Font.Size = 9.5f;
+                }
+            }
+
+            if (Settings.CellStyleName != null)
                 ws.Cells.StyleName = Settings.CellStyleName;
 
-            if (Settings.HeaderStyle != null)
+            if (Settings.HeaderStyleName != null)
                 ws.Cells[1, 1].StyleName = Settings.HeaderStyleName;
 
             if (Settings.HasRowNumber)
@@ -154,7 +128,7 @@ namespace Gufel.ExcelBuilder
 
             for (var i = 0; i < colInfoList.Count; i++)
             {
-                if (Settings.HeaderStyle != null)
+                if (Settings.HeaderStyleName != null)
                     ws.Cells[1, i + cellPadding].StyleName = Settings.HeaderStyleName;
 
                 ws.Cells[1, i + cellPadding].Value = colInfoList[i].Name;
@@ -192,19 +166,20 @@ namespace Gufel.ExcelBuilder
                     {
                         col.Value = colData.Value;
                         var columnFormat = colInfoList[colsIndex].ColumnFormat;
-                        var dateFormat = colInfoList[colsIndex].DateFormat;
+                        
 
                         if (colInfoList[colsIndex].AsPersianDate && colData.Value is DateTime dateTime)
                         {
+                            var dateFormat = colInfoList[colsIndex].PersianDateFormat;
                             var vDate = new VDate(dateTime);
                             col.Value = vDate.ToString(dateFormat ?? "$yyyy/$MM/$dd");
                         }
-                        else if (columnFormat == null && colData.Value is DateTime)
+                        else if (colData.Value is DateTime)
                         {
-                            col.Style.Numberformat.Format = "yyyy/MM/dd HH:mm:ss";
+                            col.Style.Numberformat.Format = columnFormat ?? "yyyy/MM/dd HH:mm:ss";
                         }
                         else if (columnFormat != null)
-                            col.Style.Numberformat.Format = colInfoList[colsIndex].ColumnFormat;
+                            col.Style.Numberformat.Format = columnFormat;
                     }
 
                     colsIndex++;
@@ -216,7 +191,7 @@ namespace Gufel.ExcelBuilder
                 }
             }
 
-            if (autoFitColumns)
+            if (Settings.AutoFitColumns)
                 ws.Cells.AutoFitColumns();
 
             ws.View.PageLayoutView = false;
@@ -227,17 +202,14 @@ namespace Gufel.ExcelBuilder
 
         public byte[] BuildFile()
         {
-            if (_xlsx == null || _memoryStream == null)
-                throw new ExcelBuildException("document is empty", "empty.document");
-
             _xlsx.Save();
             return _memoryStream.ToArray();
         }
 
         public void Dispose()
         {
-            _xlsx?.Dispose();
-            _memoryStream?.Dispose();
+            _xlsx.Dispose();
+            _memoryStream.Dispose();
         }
     }
 }

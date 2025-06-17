@@ -1,6 +1,7 @@
 ﻿using Gufel.ExcelBuilder.ColumnProvider;
 using Gufel.ExcelBuilder.Model;
 using System.ComponentModel.DataAnnotations;
+using System.Dynamic;
 
 namespace Gufel.ExcelBuilder.UnitTest
 {
@@ -30,6 +31,23 @@ namespace Gufel.ExcelBuilder.UnitTest
             Assert.NotNull(cols.Find(x => x is { Name: "BoolProperty", SourceIsField: true }));
         }
 
+        [Fact]
+        public void ProviderColumn_WhenTypeIsDynamic_MustReturnValidAttributes()
+        {
+            var provider = new DefaultColumnProvider(onlyWithAttribute: false);
+            dynamic data = new ExpandoObject();
+            data.IntProperty = 1;
+            data.StringProperty = "";
+            data.BoolProperty = false;
+
+            provider.SetSampleData(data);
+            var cols = provider.GetColumns(typeof(ExpandoObject));
+
+            Assert.NotNull(cols.Find(x => x is { Name: "IntProperty", SourceIsField: false }));
+            Assert.NotNull(cols.Find(x => x is { Name: "StringProperty", SourceIsField: false }));
+            Assert.NotNull(cols.Find(x => x is { Name: "BoolProperty", SourceIsField: false }));
+        }
+
         private record TestModel(int IntProperty, string StringProperty, bool BoolProperty)
         {
             [ExcelColumn]
@@ -40,7 +58,6 @@ namespace Gufel.ExcelBuilder.UnitTest
 
             [ExcelColumn] public bool BoolProperty = BoolProperty;
         }
-
 
         private class TestModelSimpleMetaData
         {
