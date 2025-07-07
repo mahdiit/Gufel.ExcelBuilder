@@ -5,46 +5,42 @@ using Gufel.ExcelBuilder.Model.Base;
 
 namespace Gufel.ExcelBuilder.ColumnProvider
 {
-    public class DefaultColumnProvider(bool onlyWithAttribute = true)
+    public class DefaultColumnProvider(bool onlyColumnWithAttribute = true)
         : IColumnProvider
     {
-        object? _sampleData;
         private static readonly Lazy<DefaultColumnProvider> Default = new(() => new DefaultColumnProvider());
         public static DefaultColumnProvider Create()
         {
             return Default.Value;
         }
 
-        private Type? _dataType;
-        private MetadataTypeAttribute? _metadataType;
-
-        public List<ExcelColumnAttribute> GetColumns(Type dataType)
+        public List<ExcelColumnAttribute> GetColumns(Type dataType, object? data)
         {
             if (dataType == typeof(ExpandoObject))
             {
-                return _sampleData == null ? 
-                    throw new ArgumentNullException("sample data in dynamic object must set") 
-                    : DynamicData();
+                return data == null ?
+                    throw new ArgumentNullException("data in dynamic object must set")
+                    : DynamicData(data);
             }
 
-            _dataType = dataType;
-            _metadataType = _dataType.GetCustomAttributes(typeof(MetadataTypeAttribute), true)
+            var metadataType = dataType.GetCustomAttributes(typeof(MetadataTypeAttribute), true)
                 .OfType<MetadataTypeAttribute>().FirstOrDefault();
 
-            return FieldData().Concat(PropertyData())
+            return FieldData(dataType, metadataType, onlyColumnWithAttribute)
+                .Concat(PropertyData(dataType, metadataType, onlyColumnWithAttribute))
                 .OrderBy(x => x.Priority)
                 .ToList();
         }
 
-        private List<ExcelColumnAttribute> PropertyData()
+        public static List<ExcelColumnAttribute> PropertyData(Type dataType, MetadataTypeAttribute? metadataType = null, bool onlyColWithAtt = true)
         {
-            var props = _dataType!.GetProperties();
-            var metaDataProps = _metadataType?.MetadataClassType.GetProperties();
+            var props = dataType.GetProperties();
+            var metaDataProps = metadataType?.MetadataClassType.GetProperties();
 
             var result = new List<ExcelColumnAttribute>();
             foreach (var prop in props)
             {
-                if (onlyWithAttribute)
+                if (onlyColWithAtt)
                 {
                     var attr = prop.GetCustomAttributes(true).FirstOrDefault(c => c is ExcelColumnAttribute);
                     if (attr == null && metaDataProps != null)
@@ -74,15 +70,15 @@ namespace Gufel.ExcelBuilder.ColumnProvider
             return result.OrderBy(x => x.Priority).ToList();
         }
 
-        private List<ExcelColumnAttribute> FieldData()
+        public static List<ExcelColumnAttribute> FieldData(Type dataType, MetadataTypeAttribute? metadataType = null, bool onlyColWithAtt = true)
         {
-            var props = _dataType!.GetFields();
-            var metaDataProps = _metadataType?.MetadataClassType.GetFields();
+            var props = dataType.GetFields();
+            var metaDataProps = metadataType?.MetadataClassType.GetFields();
 
             var result = new List<ExcelColumnAttribute>();
             foreach (var prop in props)
             {
-                if (onlyWithAttribute)
+                if (onlyColWithAtt)
                 {
                     var attr = prop.GetCustomAttributes(true).FirstOrDefault(c => c is ExcelColumnAttribute);
                     if (attr == null && metaDataProps != null)
@@ -110,9 +106,9 @@ namespace Gufel.ExcelBuilder.ColumnProvider
             return result;
         }
 
-        private List<ExcelColumnAttribute> DynamicData()
+        public static List<ExcelColumnAttribute> DynamicData(object data)
         {
-            return ((ExpandoObject)_sampleData!)
+            return ((ExpandoObject)data)
                 .Select(x => new ExcelColumnAttribute()
                 {
                     Name = x.Key,
@@ -121,9 +117,26 @@ namespace Gufel.ExcelBuilder.ColumnProvider
                 }).ToList();
         }
 
-        public void SetSampleData(object? sampleData)
+        public static List<SqlExcelColumn> SqlReaderData(IDataReaderAdapter reader, List<ExcelColumnAttribute> columns)
         {
-            _sampleData = sampleData;
+            var cols = new List<SqlExcelColumn>();
+            for (var i = 0; i < reader.FieldCount; i++)
+            {
+                var name = reader.GetName(i);
+                var type = reader.GetFieldType(i);
+                if (type == null)
+                    continue;
+
+                var col = columns.FirstOrDefault(x => x.SourceName == name) ?? new ExcelColumnAttribute()
+                {
+                    SourceName = name,
+                    Priority = i,
+                    Name = name
+                };
+
+                cols.Add(new SqlExcelColumn(i, type, col));
+            }
+            return cols;
         }
     }
 }

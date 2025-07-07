@@ -10,7 +10,7 @@
 		<PackageId>Gufel.ExcelBuilder</PackageId>
 		<Title>Gufel excel builder / importer extention for EPPlus</Title>
 		<Authors>mahdiit</Authors>
-		<Version>1.0.0</Version>
+		<Version>2.0.0</Version>
 		<Description>This project provides a flexible and extensible framework for building and exporting Excel files in .NET</Description>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/mahdiit/Gufel.ExcelBuilder</RepositoryUrl>
@@ -23,7 +23,7 @@
 	<ItemGroup>
 		<PackageReference Include="EPPlus" Version="8.0.5" />
 		<PackageReference Include="Gufel.Date" Version="1.0.0" />
-		<PackageReference Include="Gufel.ExcelBuilder.Model" Version="1.0.0" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -39,6 +39,10 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Model\Gufel.ExcelBuilder.Model.csproj" />
 	</ItemGroup>
 
 </Project>

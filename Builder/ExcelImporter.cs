@@ -89,9 +89,9 @@ namespace Gufel.ExcelBuilder
                 throw new ExcelImportException("Worksheet with this name not found", "worksheet.not.found");
 
             _currentWorksheet = _workbook.Worksheets[sheetName];
-            
+
             var itemType = typeof(T);
-            var columns = _columnProvider.GetColumns(itemType);
+            var columns = _columnProvider.GetColumns(itemType, null);
 
             var result = new List<T>();
             for (var rowNum = 2; rowNum <= _currentWorksheet.Dimension.End.Row; rowNum++)

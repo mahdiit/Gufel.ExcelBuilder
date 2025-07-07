@@ -17,6 +17,7 @@ A powerful and flexible Excel file builder library for .NET applications that ma
 - Support for dynamic data
 - Memory-efficient processing
 - Thread-safe operations
+- Support sql data reader
 
 ## Installation
 
@@ -54,9 +55,7 @@ using Gufel.ExcelBuilder;
 // Create custom settings
 var settings = new ExcelBuilderSettings
 {
-    UseDefaultStyle = true,
-    HeaderStyleName = "CustomHeader",
-    CellStyleName = "CustomCell",
+    UseDefaultStyle = true,    
     HasRowNumber = true,
     RowNumberColumnName = "Row",
     AutoFitColumns = true,
@@ -69,13 +68,13 @@ builder.SetSettings(settings);
 
 // Create custom styles
 var headerStyle = builder.CreateStyle("CustomHeader");
-headerStyle.Style.Fill.PatternType = ExcelFillStyle.Solid;
-headerStyle.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
-headerStyle.Style.Font.Bold = true;
+headerStyle.Object.Style.Fill.PatternType = ExcelFillStyle.Solid;
+headerStyle.Object.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+headerStyle.Object.Style.Font.Bold = true;
 
 var cellStyle = builder.CreateStyle("CustomCell");
-cellStyle.Style.Font.Name = "Arial";
-cellStyle.Style.Font.Size = 10;
+cellStyle.Object.Style.Font.Name = "Arial";
+cellStyle.Object.Style.Font.Size = 10;
 
 // Add data with custom column rendering
 builder.OnRenderColumn += (column, value, excelColumn, rowData) =>
@@ -130,14 +129,9 @@ builder.SetValueProvider(new CustomValueProvider());
 ```csharp
 public class CustomColumnProvider : IColumnProvider
 {
-    public List<ExcelColumnAttribute> GetColumns(Type type)
+    public List<ExcelColumnAttribute> GetColumns(Type dataType, object? data)
     {
         // Implement custom column extraction logic
-    }
-
-    public void SetSampleData(object? data)
-    {
-        // Set sample data for column generation
     }
 }
 
@@ -184,13 +178,30 @@ using var builder = new ExcelBuilder();
 // ... use the builder
 // Resources will be automatically disposed
 ```
+### Sql data reader
+Add sheet with sqlreader, support custom column name and order
+```csharp
+using var builder = new ExcelBuilder();
+var sqlConnection = new SqlConnection("sql_connection_string");
+var sqlCommand = new SqlCommand("Select * from Report", sqlConnection);
+sqlConnection.Open();
+var reader = sqlCommand.ExecuteReader();
 
+//this will read custom column name and order
+var ctx = new List<ExcelColumnAttribute>();
+
+var fileByte = excelBuilder.AddSheet("SqlData", reader, ctx).BuildFile();
+
+reader.Close();
+sqlCommand.Dispose();
+sqlConnection.Close();
+sqlConnection.Dispose();
+```
+
+## License
 Please note library use epplus so please set license before using.
 
 ```csharp
  ExcelPackage.License.SetNonCommercialPersonal("Personal");
 ```
-
-## License
-
 This project is licensed under the terms specified in the LICENSE.txt file.

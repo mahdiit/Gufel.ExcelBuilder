@@ -5,14 +5,9 @@ namespace Gufel.ExcelBuilder.ColumnProvider
 {
     public class ManualColumnProvider(List<ExcelColumnAttribute> columns) : IColumnProvider
     {
-        public List<ExcelColumnAttribute> GetColumns(Type dataType)
+        public List<ExcelColumnAttribute> GetColumns(Type dataType, object? data)
         {
             return columns;
-        }
-
-        public void SetSampleData(object? sampleData)
-        {
-            
         }
     }
 }
