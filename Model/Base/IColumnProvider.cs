@@ -2,6 +2,5 @@
 
 public interface IColumnProvider
 {
-    void SetSampleData(object? sampleData);
-    List<ExcelColumnAttribute> GetColumns(Type dataType);
+    List<ExcelColumnAttribute> GetColumns(Type dataType, object? data);
 }
