@@ -82,8 +82,9 @@ namespace Gufel.ExcelBuilder
             return AddSheet(name, colInfoList, enumerable);
         }
 
-        public ExcelBuilder AddSheet(string name, IDataReaderAdapter reader, List<ExcelColumnAttribute>? columns = null)
+        public ExcelBuilder AddSheet(string name, IDataReaderAdapter reader)
         {
+            var columns = _columnProvider.GetColumns(typeof(IDataReaderAdapter), null);
             var sqlColumns = DefaultColumnProvider.SqlReaderData(reader, columns ?? []);
             var ws = PrepareSheet(name, sqlColumns.Select(x => x.Column).ToList());
 

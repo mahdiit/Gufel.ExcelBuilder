@@ -189,8 +189,9 @@ var reader = sqlCommand.ExecuteReader();
 
 //this will read custom column name and order
 var ctx = new List<ExcelColumnAttribute>();
-
-var fileByte = excelBuilder.AddSheet("SqlData", reader, ctx).BuildFile();
+var provider = new ManualColumnProvider(ctx);
+excelBuilder.SetColumnProvider(provider);
+var fileByte = excelBuilder.AddSheet("SqlData", reader).BuildFile();
 
 reader.Close();
 sqlCommand.Dispose();
