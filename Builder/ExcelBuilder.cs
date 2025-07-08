@@ -86,7 +86,7 @@ namespace Gufel.ExcelBuilder
         {
             var columns = _columnProvider.GetColumns(typeof(IDataReaderAdapter), null);
             var sqlColumns = DefaultColumnProvider.SqlReaderData(reader, columns ?? []);
-            var ws = PrepareSheet(name, sqlColumns.Select(x => x.Column).ToList());
+            var ws = PrepareSheet(name, sqlColumns.Select(x => x.Column).OrderBy(x => x.Priority).ToList());
 
             var totalCount = 0;
             while (reader.Read())
