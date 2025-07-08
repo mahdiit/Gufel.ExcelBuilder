@@ -11,4 +11,5 @@ public class SqlDataReaderAdapter(SqlDataReader reader) : IDataReaderAdapter
     public Type? GetFieldType(int i) => reader.GetFieldType(i);
     public int FieldCount => reader.FieldCount;
     public bool IsDbNull(int i) => reader.IsDBNull(i);
+    public bool NextResult() => reader.NextResult();
 }

@@ -10,7 +10,7 @@
 		<PackageId>Gufel.ExcelBuilder.Model</PackageId>
 		<Title>Gufel excel builder / importer extention for EPPlus (Models only)</Title>
 		<Authors>mahdiit</Authors>
-		<Version>2.0.0</Version>
+		<Version>2.1.0</Version>
 		<Description>Models only for gufel excel builder lib</Description>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/mahdiit/Gufel.ExcelBuilder</RepositoryUrl>
@@ -18,6 +18,7 @@
 		<PackageIcon>excel.jpg</PackageIcon>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageProjectUrl>https://github.com/mahdiit/Gufel.ExcelBuilder</PackageProjectUrl>
+		<PackageReleaseNotes Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">Add sql reader (multiple result) to excel builder</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup>

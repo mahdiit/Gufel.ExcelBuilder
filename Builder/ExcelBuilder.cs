@@ -82,6 +82,12 @@ namespace Gufel.ExcelBuilder
             return AddSheet(name, colInfoList, enumerable);
         }
 
+        /// <summary>
+        /// Add first result in reader
+        /// </summary>
+        /// <param name="name">sheet name</param>
+        /// <param name="reader">sql data reader</param>
+        /// <returns>current builder</returns>
         public ExcelBuilder AddSheet(string name, IDataReaderAdapter reader)
         {
             var columns = _columnProvider.GetColumns(typeof(IDataReaderAdapter), null);
@@ -137,6 +143,28 @@ namespace Gufel.ExcelBuilder
 
             DoneSheet(ws);
 
+            return this;
+        }
+
+        /// <summary>
+        /// Add multiple set in reader
+        /// </summary>
+        /// <param name="sheetNames">sheet names or does not exist use default naming</param>
+        /// <param name="reader">sql data reader</param>
+        /// <returns>current builder</returns>
+        public ExcelBuilder AddSheets(string[] sheetNames, IDataReaderAdapter reader)
+        {
+            var sheetIndex = 0;
+            do
+            {
+                var sheetName = $"sheet-{sheetIndex + 1}";
+                if (sheetNames != null && (sheetNames.Length - 1) > sheetIndex)
+                    sheetName = sheetNames[sheetIndex];
+
+                AddSheet(sheetName, reader);
+                sheetIndex++;
+
+            } while (reader.NextResult());
             return this;
         }
 

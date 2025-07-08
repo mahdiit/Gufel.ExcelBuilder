@@ -8,4 +8,5 @@ public interface IDataReaderAdapter
     Type? GetFieldType(int i);
     int FieldCount { get; }
     bool IsDbNull(int i);
+    bool NextResult();
 }
