@@ -18,11 +18,13 @@
 		<PackageIcon>excel.jpg</PackageIcon>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageProjectUrl>https://github.com/mahdiit/Gufel.ExcelBuilder</PackageProjectUrl>
+		<PackageReleaseNotes Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">Add sql reader to excel builder</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="EPPlus" Version="8.0.5" />
 		<PackageReference Include="Gufel.Date" Version="1.0.0" />
+		<PackageReference Include="Gufel.ExcelBuilder.Model" Version="2.0.0" />
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
 	</ItemGroup>
 
@@ -40,9 +42,4 @@
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\Model\Gufel.ExcelBuilder.Model.csproj" />
-	</ItemGroup>
-
 </Project>
